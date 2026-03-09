@@ -1,0 +1,22 @@
+{
+  "name": "fima-mobile-attendance",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.23.1",
+    "react": "18.2.0",
+    "react-native": "0.74.3"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.66",
+    "@types/react-native": "^0.73.0",
+    "typescript": "^5.4.5"
+  }
+}
