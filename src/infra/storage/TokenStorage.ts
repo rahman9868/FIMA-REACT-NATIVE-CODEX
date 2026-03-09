@@ -5,12 +5,16 @@ import {
 } from '../../domain/entities/Assignment';
 import {AuthToken} from '../../domain/entities/AuthToken';
 import {EmployeeAcl} from '../../domain/entities/EmployeeAcl';
+import {FiraConfig} from '../../domain/entities/FiraConfig';
+import {EmployeePoi} from '../../domain/entities/Poi';
 
 const STORAGE_KEY = 'fima_auth_token';
 const ACL_STORAGE_KEY = 'fima_employee_acl';
 const ASSIGNMENTS_STORAGE_KEY = 'fima_assignments';
 const TODAY_ASSIGNMENT_STORAGE_KEY = 'fima_today_assignment';
 const TODAY_SCHEDULE_DETAIL_STORAGE_KEY = 'fima_today_schedule_detail';
+const POI_STORAGE_KEY = 'fima_poi_of_employee';
+const FIRA_CONFIG_STORAGE_KEY = 'fima_fira_config';
 
 export class TokenStorage {
   async save(token: AuthToken): Promise<void> {
@@ -37,6 +41,14 @@ export class TokenStorage {
       TODAY_SCHEDULE_DETAIL_STORAGE_KEY,
       JSON.stringify(detail),
     );
+  }
+
+  async saveEmployeePois(pois: EmployeePoi[]): Promise<void> {
+    await AsyncStorage.setItem(POI_STORAGE_KEY, JSON.stringify(pois));
+  }
+
+  async saveFiraConfigs(configs: FiraConfig[]): Promise<void> {
+    await AsyncStorage.setItem(FIRA_CONFIG_STORAGE_KEY, JSON.stringify(configs));
   }
 
   async getAccessToken(): Promise<string | null> {

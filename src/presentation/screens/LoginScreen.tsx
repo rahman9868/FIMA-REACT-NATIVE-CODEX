@@ -10,7 +10,11 @@ import {
 } from 'react-native';
 import {useLoginViewModel} from '../viewmodels/useLoginViewModel';
 
-export const LoginScreen = () => {
+type LoginScreenProps = {
+  onLoginSuccess: () => void;
+};
+
+export const LoginScreen = ({onLoginSuccess}: LoginScreenProps) => {
   const {
     username,
     password,
@@ -20,7 +24,7 @@ export const LoginScreen = () => {
     setUsername,
     setPassword,
     onLogin,
-  } = useLoginViewModel();
+  } = useLoginViewModel({onLoginSuccess});
 
   return (
     <SafeAreaView style={styles.safeArea}>

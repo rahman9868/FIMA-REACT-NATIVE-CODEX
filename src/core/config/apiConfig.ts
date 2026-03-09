@@ -6,5 +6,7 @@ export const API_CONFIG = {
   scheduleEmployeePath: 'att/schedule/employee',
   scheduleFlexibleEmployeePath: 'att/schedule-flexible/employee',
   scheduleFlexibleTempEmployeePath: 'att/schedule-flexible-temp/employee',
+  poiOfEmployeePath: 'cache/poiOfEmployee',
+  firaConfigPath: 'fira/config/firaconfig',
   basicAuthorization: 'Basic ZmlyYS1hcGktY2xpZW50OnBsZWFzZS1jaGFuZ2UtdGhpcw',
 };

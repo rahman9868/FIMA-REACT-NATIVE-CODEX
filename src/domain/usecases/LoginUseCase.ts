@@ -5,6 +5,8 @@ import {
 } from '../entities/Assignment';
 import {AuthToken} from '../entities/AuthToken';
 import {EmployeeAcl} from '../entities/EmployeeAcl';
+import {FiraConfig} from '../entities/FiraConfig';
+import {EmployeePoi} from '../entities/Poi';
 import {AuthRepository} from '../repositories/AuthRepository';
 
 export type LoginResult = {
@@ -13,6 +15,8 @@ export type LoginResult = {
   assignments: AssignmentBySchedule[];
   todayAssignment: AssignmentBySchedule;
   todayScheduleDetail: AssignmentScheduleDetail;
+  pois: EmployeePoi[];
+  configs: FiraConfig[];
 };
 
 const dayNames = [
@@ -57,8 +61,17 @@ export class LoginUseCase {
         token.accessToken,
         todayAssignment.attendanceTypeStr,
       );
-
     await this.authRepository.saveTodayScheduleDetail(todayScheduleDetail);
+
+    const employeeId = this.resolveEmployeeId(acl);
+    const pois = await this.authRepository.fetchEmployeePois(
+      token.accessToken,
+      employeeId,
+    );
+    await this.authRepository.saveEmployeePois(pois);
+
+    const configs = await this.authRepository.fetchFiraConfig(token.accessToken);
+    await this.authRepository.saveFiraConfigs(configs);
 
     return {
       token,
@@ -66,6 +79,8 @@ export class LoginUseCase {
       assignments,
       todayAssignment,
       todayScheduleDetail,
+      pois,
+      configs,
     };
   }
 
@@ -81,6 +96,21 @@ export class LoginUseCase {
     );
 
     return matched ?? assignments[0];
+  }
+
+  private resolveEmployeeId(acl: EmployeeAcl): number {
+    const employeeId =
+      typeof acl.id === 'number'
+        ? acl.id
+        : typeof acl.account?.id === 'number'
+          ? acl.account.id
+          : null;
+
+    if (employeeId === null) {
+      throw new Error('Employee ID not found in ACL response.');
+    }
+
+    return employeeId;
   }
 }
 

@@ -6,6 +6,8 @@ import {
 } from '../../domain/entities/Assignment';
 import {AuthToken} from '../../domain/entities/AuthToken';
 import {EmployeeAcl} from '../../domain/entities/EmployeeAcl';
+import {FiraConfig} from '../../domain/entities/FiraConfig';
+import {EmployeePoi} from '../../domain/entities/Poi';
 import {AuthRepository} from '../../domain/repositories/AuthRepository';
 import {HttpClient} from '../../infra/network/HttpClient';
 import {TokenStorage} from '../../infra/storage/TokenStorage';
@@ -82,6 +84,26 @@ export class AuthRepositoryImpl implements AuthRepository {
     });
   }
 
+  async fetchEmployeePois(
+    accessToken: string,
+    employeeId: number,
+  ): Promise<EmployeePoi[]> {
+    return this.httpClient.request<EmployeePoi[]>(
+      `${API_CONFIG.poiOfEmployeePath}/${employeeId}`,
+      {
+        method: 'GET',
+        accessToken,
+      },
+    );
+  }
+
+  async fetchFiraConfig(accessToken: string): Promise<FiraConfig[]> {
+    return this.httpClient.request<FiraConfig[]>(API_CONFIG.firaConfigPath, {
+      method: 'GET',
+      accessToken,
+    });
+  }
+
   async saveToken(token: AuthToken): Promise<void> {
     await this.tokenStorage.save(token);
   }
@@ -100,6 +122,14 @@ export class AuthRepositoryImpl implements AuthRepository {
 
   async saveTodayScheduleDetail(detail: AssignmentScheduleDetail): Promise<void> {
     await this.tokenStorage.saveTodayScheduleDetail(detail);
+  }
+
+  async saveEmployeePois(pois: EmployeePoi[]): Promise<void> {
+    await this.tokenStorage.saveEmployeePois(pois);
+  }
+
+  async saveFiraConfigs(configs: FiraConfig[]): Promise<void> {
+    await this.tokenStorage.saveFiraConfigs(configs);
   }
 
   async getAccessToken(): Promise<string | null> {

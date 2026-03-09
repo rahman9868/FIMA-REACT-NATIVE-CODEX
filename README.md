@@ -18,6 +18,11 @@ Mobile attendance app starter using **Clean Architecture** with login + ACL sync
   - `att/schedule-flexible/employee` for `Flexi`
   - `att/schedule-flexible-temp/employee` for `FlexiTemp`
 - Saves assignment list, today's assignment, and today's schedule detail to local storage.
+- After schedule detail sync, loads and stores:
+  - `cache/poiOfEmployee/{employeeId}`
+  - `fira/config/firaconfig`
+- After all API calls succeed, app navigates to Home (Dashboard default).
+- Home page includes a drawer menu: Dashboard, Attendance, Notification, My Report, Approval.
 - Non-login API calls are set up to include Bearer token through `HttpClient` request options.
 
 ## Structure

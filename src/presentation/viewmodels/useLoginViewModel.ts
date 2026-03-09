@@ -5,7 +5,11 @@ import {HttpClient} from '../../infra/network/HttpClient';
 import {TokenStorage} from '../../infra/storage/TokenStorage';
 import {API_CONFIG} from '../../core/config/apiConfig';
 
-export const useLoginViewModel = () => {
+type UseLoginViewModelParams = {
+  onLoginSuccess: () => void;
+};
+
+export const useLoginViewModel = ({onLoginSuccess}: UseLoginViewModelParams) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,9 +31,10 @@ export const useLoginViewModel = () => {
     try {
       const result = await loginUseCase.execute(username, password);
       setSuccessMessage(
-        `Login success. ${result.todayAssignment.attendanceTypeStr} assignment synced for ${result.acl.account?.name || result.acl.account?.username || 'employee'}.`,
+        `Login success. ${result.todayAssignment.attendanceTypeStr} assignment, POI, and config synced for ${result.acl.account?.name || result.acl.account?.username || 'employee'}.`,
       );
       setPassword('');
+      onLoginSuccess();
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Failed to login';
       setError(message);
