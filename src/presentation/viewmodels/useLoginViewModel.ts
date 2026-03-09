@@ -27,7 +27,7 @@ export const useLoginViewModel = () => {
     try {
       const result = await loginUseCase.execute(username, password);
       setSuccessMessage(
-        `Login success. ACL synced for ${result.acl.account.name || result.acl.account.username}.`,
+        `Login success. ${result.todayAssignment.attendanceTypeStr} assignment synced for ${result.acl.account?.name || result.acl.account?.username || 'employee'}.`,
       );
       setPassword('');
     } catch (e) {
