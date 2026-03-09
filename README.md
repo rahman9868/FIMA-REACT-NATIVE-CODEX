@@ -1,6 +1,6 @@
 # FIMA - React Native (Codex)
 
-Mobile attendance app starter using **Clean Architecture** with a login flow.
+Mobile attendance app starter using **Clean Architecture** with login + ACL sync flow.
 
 ## Implemented feature
 - Login screen with username and password.
@@ -10,7 +10,10 @@ Mobile attendance app starter using **Clean Architecture** with a login flow.
 - Maps API response:
   - `access_token`
   - `refresh_token`
-- Saves token payload into local storage (`AsyncStorage`).
+- After login success, calls `GET att/employee/acl` using:
+  - Header `Authorization: Bearer <access_token>`
+- Saves token and employee ACL into local storage (`AsyncStorage`).
+- Non-login API calls are set up to include Bearer token through `HttpClient` request options.
 
 ## Structure
 

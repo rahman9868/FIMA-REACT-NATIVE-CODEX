@@ -2,15 +2,24 @@ export type RequestOptions = {
   method?: 'GET' | 'POST';
   headers?: Record<string, string>;
   body?: string;
+  accessToken?: string;
 };
 
 export class HttpClient {
   constructor(private readonly baseUrl: string) {}
 
   async request<T>(path: string, options: RequestOptions): Promise<T> {
+    const headers: Record<string, string> = {
+      ...(options.headers ?? {}),
+    };
+
+    if (options.accessToken) {
+      headers.Authorization = `Bearer ${options.accessToken}`;
+    }
+
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: options.method ?? 'GET',
-      headers: options.headers,
+      headers,
       body: options.body,
     });
 

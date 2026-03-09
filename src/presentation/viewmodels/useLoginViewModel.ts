@@ -25,8 +25,10 @@ export const useLoginViewModel = () => {
     setSuccessMessage(null);
 
     try {
-      await loginUseCase.execute(username, password);
-      setSuccessMessage('Login success. Token is stored locally.');
+      const result = await loginUseCase.execute(username, password);
+      setSuccessMessage(
+        `Login success. ACL synced for ${result.acl.account.name || result.acl.account.username}.`,
+      );
       setPassword('');
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Failed to login';
