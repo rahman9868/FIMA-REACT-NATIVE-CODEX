@@ -8,6 +8,29 @@ import {EmployeeAcl} from '../../domain/entities/EmployeeAcl';
 import {FiraConfig} from '../../domain/entities/FiraConfig';
 import {EmployeePoi} from '../../domain/entities/Poi';
 
+export type StoredAttendanceEventType =
+  | 'LATE'
+  | 'ON_TIME'
+  | 'ABSENT'
+  | 'PENDING'
+  | 'WORKING'
+  | 'BUSINESS'
+  | 'HOLIDAY'
+  | 'LEAVE';
+
+export type StoredAttendanceSummaryEvent = {
+  day: number;
+  eventType: StoredAttendanceEventType;
+};
+
+export type StoredAttendanceSummaryItem = {
+  employeeId: number;
+  employeeName: string;
+  event: StoredAttendanceSummaryEvent[];
+  month: number;
+  year: number;
+};
+
 const STORAGE_KEY = 'fima_auth_token';
 const ACL_STORAGE_KEY = 'fima_employee_acl';
 const ASSIGNMENTS_STORAGE_KEY = 'fima_assignments';
@@ -15,6 +38,7 @@ const TODAY_ASSIGNMENT_STORAGE_KEY = 'fima_today_assignment';
 const TODAY_SCHEDULE_DETAIL_STORAGE_KEY = 'fima_today_schedule_detail';
 const POI_STORAGE_KEY = 'fima_poi_of_employee';
 const FIRA_CONFIG_STORAGE_KEY = 'fima_fira_config';
+const ATTENDANCE_SUMMARY_STORAGE_KEY = 'fima_attendance_summary';
 
 export class TokenStorage {
   async save(token: AuthToken): Promise<void> {
@@ -51,6 +75,14 @@ export class TokenStorage {
     await AsyncStorage.setItem(FIRA_CONFIG_STORAGE_KEY, JSON.stringify(configs));
   }
 
+  async saveAttendanceSummary(summary: StoredAttendanceSummaryItem[]): Promise<void> {
+    await AsyncStorage.setItem(
+      ATTENDANCE_SUMMARY_STORAGE_KEY,
+      JSON.stringify(summary),
+    );
+  }
+
+
   async getAccessToken(): Promise<string | null> {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) {
@@ -69,4 +101,14 @@ export class TokenStorage {
 
     return JSON.parse(raw) as EmployeeAcl;
   }
+
+  async getAttendanceSummary(): Promise<StoredAttendanceSummaryItem[] | null> {
+    const raw = await AsyncStorage.getItem(ATTENDANCE_SUMMARY_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    return JSON.parse(raw) as StoredAttendanceSummaryItem[];
+  }
 }
+
