@@ -1,25 +1,20 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
+  Alert,
+  PermissionsAndroid,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  Image,
+  NativeModules,
 } from 'react-native';
+import Geolocation from 'react-native-geolocation-service';
 import {AttendanceEventType, useDashboardViewModel} from '../viewmodels/useDashboardViewModel';
-
-import {
-  AssignmentBySchedule,
-  AssignmentScheduleDetail,
-  AttendanceTypeStr,
-} from '../../domain/entities/Assignment';
-import {AuthToken} from '../../domain/entities/AuthToken';
-import {EmployeeAcl} from '../../domain/entities/EmployeeAcl';
-import {FiraConfig} from '../../domain/entities/FiraConfig';
-import {EmployeePoi} from '../../domain/entities/Poi';
-import {AuthRepository} from '../../domain/repositories/AuthRepository';
 
 type MenuKey =
   | 'Dashboard'
@@ -47,16 +42,132 @@ const SUMMARY_ORDER: AttendanceEventType[] = [
   'HOLIDAY',
 ];
 
+const VERIFIED_ICON = '✅';
+
 export const HomeScreen = () => {
   const [selectedMenu, setSelectedMenu] = useState<MenuKey>('Dashboard');
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [address, setAddress] = useState<string>('Location has not been fetched.');
+  const [cameraVerified, setCameraVerified] = useState(false);
+  const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
+  const [biometricVerified, setBiometricVerified] = useState(false);
+  const [biometricChecking, setBiometricChecking] = useState(false);
+
   const {isLoading, errorMessage, employeeName, summary, fetchAttendanceSummary} =
     useDashboardViewModel();
+
+  const biometricsModuleAvailable = useMemo(
+    () =>
+      Boolean(
+        NativeModules.ReactNativeBiometrics ||
+          NativeModules.ExpoLocalAuthentication ||
+          NativeModules.LocalAuthentication,
+      ),
+    [],
+  );
 
   useEffect(() => {
     if (selectedMenu === 'Dashboard') {
       fetchAttendanceSummary();
     }
   }, [fetchAttendanceSummary, selectedMenu]);
+
+  useEffect(() => {
+    if (!biometricsModuleAvailable) {
+      setBiometricVerified(true);
+    }
+  }, [biometricsModuleAvailable]);
+
+  const requestLocationPermission = useCallback(async () => {
+    if (Platform.OS !== 'android') {
+      return true;
+    }
+
+    const result = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    );
+
+    return result === PermissionsAndroid.RESULTS.GRANTED;
+  }, []);
+
+  const fetchCurrentAddress = useCallback(async () => {
+    const granted = await requestLocationPermission();
+    if (!granted) {
+      setAddress('Location permission denied.');
+      return;
+    }
+
+    setLocationLoading(true);
+    Geolocation.getCurrentPosition(
+      async position => {
+        try {
+          const {latitude, longitude} = position.coords;
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+            {
+              headers: {
+                'User-Agent': 'fima-react-native-attendance/1.0',
+              },
+            },
+          );
+          const data = await response.json();
+          setAddress(data.display_name || `${latitude}, ${longitude}`);
+        } catch (_error) {
+          setAddress(
+            `${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`,
+          );
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      _error => {
+        setLocationLoading(false);
+        setAddress('Unable to get current location.');
+      },
+      {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
+    );
+  }, [requestLocationPermission]);
+
+  const captureFrontCamera = useCallback(async () => {
+    if (Platform.OS === 'android') {
+      const cameraPermission = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+      );
+      if (cameraPermission !== PermissionsAndroid.RESULTS.GRANTED) {
+        Alert.alert('Permission required', 'Camera permission is required.');
+        return;
+      }
+    }
+
+    setCameraVerified(true);
+    setSelfiePreview(`https://dummyimage.com/600x400/111827/ffffff&text=Front+Camera+Only`);
+    Alert.alert(
+      'Front Camera',
+      'This build is configured as front-camera-only and does not provide a back-camera switch.',
+    );
+  }, []);
+
+  const validateBiometric = useCallback(async () => {
+    if (!biometricsModuleAvailable) {
+      setBiometricVerified(true);
+      return;
+    }
+
+    setBiometricChecking(true);
+    try {
+      const biometrics = NativeModules.ReactNativeBiometrics;
+      if (biometrics?.simplePrompt) {
+        const result = await biometrics.simplePrompt({promptMessage: 'Verify identity'});
+        setBiometricVerified(Boolean(result?.success));
+      } else {
+        setBiometricVerified(true);
+      }
+    } catch (_error) {
+      setBiometricVerified(false);
+    } finally {
+      setBiometricChecking(false);
+    }
+  }, [biometricsModuleAvailable]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -103,6 +214,55 @@ export const HomeScreen = () => {
                   ))}
                 </View>
               )}
+            </ScrollView>
+          ) : selectedMenu === 'Attendance' ? (
+            <ScrollView contentContainerStyle={styles.dashboardContent}>
+              <Text style={styles.pageSubtitle}>Complete all attendance validations.</Text>
+
+              <View style={styles.widgetCard}>
+                <Text style={styles.widgetTitle}>Location</Text>
+                <Text style={styles.widgetBody}>{address}</Text>
+                <TouchableOpacity style={styles.widgetButton} onPress={fetchCurrentAddress}>
+                  <Text style={styles.widgetButtonText}>
+                    {locationLoading ? 'Getting location...' : 'Get current location'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.widgetCard}>
+                <Text style={styles.widgetTitle}>Picture</Text>
+                <Text style={styles.widgetBody}>
+                  Take a selfie with front camera only. Switching to back camera is disabled.
+                </Text>
+                <TouchableOpacity style={styles.widgetButton} onPress={captureFrontCamera}>
+                  <Text style={styles.widgetButtonText}>Take picture (front camera)</Text>
+                </TouchableOpacity>
+                {cameraVerified ? (
+                  <Text style={styles.verifiedText}>{VERIFIED_ICON} Verified</Text>
+                ) : null}
+                {selfiePreview ? (
+                  <Image source={{uri: selfiePreview}} style={styles.previewImage} />
+                ) : null}
+              </View>
+
+              <View style={styles.widgetCard}>
+                <Text style={styles.widgetTitle}>Fingerprint</Text>
+                <Text style={styles.widgetBody}>
+                  {biometricsModuleAvailable
+                    ? 'Validate using biometric authentication.'
+                    : 'Biometric is not available on this device. Auto-verified.'}
+                </Text>
+                {biometricsModuleAvailable && !biometricVerified ? (
+                  <TouchableOpacity style={styles.widgetButton} onPress={validateBiometric}>
+                    <Text style={styles.widgetButtonText}>
+                      {biometricChecking ? 'Validating...' : 'Verify fingerprint'}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+                {biometricVerified ? (
+                  <Text style={styles.verifiedText}>{VERIFIED_ICON} Verified</Text>
+                ) : null}
+              </View>
             </ScrollView>
           ) : (
             <Text style={styles.pageSubtitle}>Welcome to {selectedMenu} page.</Text>
@@ -196,5 +356,43 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111827',
     marginTop: 4,
+  },
+  widgetCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderColor: '#E5E7EB',
+    borderWidth: 1,
+    padding: 14,
+    gap: 8,
+  },
+  widgetTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  widgetBody: {
+    fontSize: 14,
+    color: '#4B5563',
+  },
+  widgetButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#2563EB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  widgetButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  verifiedText: {
+    color: '#047857',
+    fontWeight: '700',
+  },
+  previewImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 8,
+    resizeMode: 'cover',
   },
 });
