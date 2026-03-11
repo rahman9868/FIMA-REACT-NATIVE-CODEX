@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {HomeScreen} from './src/presentation/screens/HomeScreen';
 import {LoginScreen} from './src/presentation/screens/LoginScreen';
 
@@ -12,4 +13,10 @@ const App = () => {
   return <LoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />;
 };
 
-export default App;
+export default () => {
+  return (
+    <SafeAreaProvider>
+      <App />
+    </SafeAreaProvider>
+  );
+};

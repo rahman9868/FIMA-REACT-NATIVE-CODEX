@@ -1,4 +1,10 @@
 {
   "name": "FIMA",
-  "displayName": "FIMA"
+  "displayName": "FIMA",
+  "android": {
+    "package": "com.crxlunch.fima"
+  },
+  "ios": {
+    "bundleIdentifier": "com.crxlunch.fima"
+  }
 }

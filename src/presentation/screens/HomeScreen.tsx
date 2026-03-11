@@ -1,6 +1,17 @@
 import React, {useState} from 'react';
 import {SafeAreaView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
+import {
+  AssignmentBySchedule,
+  AssignmentScheduleDetail,
+  AttendanceTypeStr,
+} from '../../domain/entities/Assignment';
+import {AuthToken} from '../../domain/entities/AuthToken';
+import {EmployeeAcl} from '../../domain/entities/EmployeeAcl';
+import {FiraConfig} from '../../domain/entities/FiraConfig';
+import {EmployeePoi} from '../../domain/entities/Poi';
+import {AuthRepository} from '../../domain/repositories/AuthRepository';
+
 type MenuKey =
   | 'Dashboard'
   | 'Attendance'
